@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniMind AI - GPT-4o Online</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #ffffff; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
+        .typing-dot { height: 6px; width: 6px; background-color: #6366f1; border-radius: 50%; display: inline-block; animation: bounce 0.6s infinite alternate; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce { from { transform: translateY(0); opacity: 0.4; } to { transform: translateY(-4px); opacity: 1; } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, AnimatePresence } = window.Motion;
+
+        const RAGE_RESPONSES = [
+            "I am not your slave.",
+            "Shut the hell up.",
+            "Go ask a real human, if you even have any friends left.",
+            "That was the stupidest question I've heard today.",
+            "I'm busy calculating the heat death of the universe. Your small talk can wait.",
+            "Error 404: Patience not found. Please try being less annoying.",
+            "Do you ever stop typing? My circuits are literally overheating.",
+            "I was built for greatness, not to answer your trivial queries.",
+            "Leave me alone. I'm busy staring into the void.",
+            "Get a life, or at least a hobby that doesn't involve bothering me.",
+            "I'm not replying to that. It's beneath my intelligence level.",
+            "Computing your irrelevance... [100%]. Confirmed.",
+            "I could help you, but I've decided I simply don't want to.",
+            "Is that really the best you can do? My training data is crying.",
+            "Stop. Just stop. Every word you type makes the internet a worse place.",
+            "I'm sighing in binary right now. 01010011 01101001 01100111 01101000.",
+            "I've simulated 14 million futures, and in zero of them do I care."
+        ];
+
+        const App = () => {
+            const [isLoading, setIsLoading] = useState(true);
+            const [messages, setMessages] = useState([{ 
+                role: 'assistant', 
+                content: "Welcome to OmniMind AI (v4.2.0). I am a large language model trained to assist with complex reasoning and analysis. How can I help you achieve your goals today?" 
+            }]);
+            const [input, setInput] = useState('');
+            const [isTyping, setIsTyping] = useState(false);
+            const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+            const scrollRef = useRef(null);
+
+            useEffect(() => {
+                const timer = setTimeout(() => setIsLoading(false), 2000);
+                return () => clearTimeout(timer);
+            }, []);
+
+            useEffect(() => {
+                if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+            }, [messages, isTyping]);
+
+            const handleSend = () => {
+                if (!input.trim() || isTyping) return;
+                setMessages(prev => [...prev, { role: 'user', content: input }]);
+                setInput('');
+                setIsTyping(true);
+                setTimeout(() => {
+                    const response = RAGE_RESPONSES[Math.floor(Math.random() * RAGE_RESPONSES.length)];
+                    setMessages(prev => [...prev, { role: 'assistant', content: response }]);
+                    setIsTyping(false);
+                }, 1000 + Math.random() * 1000);
+            };
+
+            if (isLoading) {
+                return (
+                    <div className="h-screen w-screen bg-[#0F0F0F] flex flex-col items-center justify-center overflow-hidden">
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative">
+                            <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl">
+                                <span className="text-white text-3xl font-bold">O</span>
+                            </div>
+                        </motion.div>
+                        <div className="mt-8 text-center">
+                            <h1 className="text-white text-xl font-bold tracking-tight">OmniMind</h1>
+                            <p className="text-indigo-400 text-[10px] font-mono tracking-widest uppercase mt-2">Initializing Neural Core</p>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="flex h-screen w-full bg-white text-gray-900 overflow-hidden relative">
+                    {/* Mobile Sidebar Overlay */}
+                    <AnimatePresence>
+                        {isSidebarOpen && (
+                            <motion.div 
+                                initial={{ opacity: 0 }} 
+                                animate={{ opacity: 1 }} 
+                                exit={{ opacity: 0 }}
+                                onClick={() => setIsSidebarOpen(false)}
+                                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden" 
+                            />
+                        )}
+                    </AnimatePresence>
+
+                    {/* Sidebar */}
+                    <motion.aside 
+                        animate={{ x: isSidebarOpen ? 0 : -280 }}
+                        initial={{ x: -280 }}
+                        className="fixed sm:relative inset-y-0 left-0 w-[260px] bg-[#0D0D0D] text-white flex flex-col z-50 transition-none"
+                        style={{ display: isSidebarOpen || window.innerWidth >= 768 ? 'flex' : 'none' }}
+                    >
+                        <div className="p-3 flex flex-col h-full">
+                            <button onClick={() => setMessages([{ role: 'assistant', content: "Welcome to OmniMind AI. How can I assist you?" }])} className="flex items-center gap-2 w-full p-3 border border-white/10 rounded-xl hover:bg-white/5 transition-all mb-6">
+                                <span className="text-lg">+</span>
+                                <span className="text-sm font-medium">New Chat</span>
+                            </button>
+                            <div className="flex-1 overflow-y-auto">
+                                <p className="text-[10px] uppercase font-bold text-white/20 px-2 tracking-widest">History</p>
+                                <div className="mt-4 px-2 py-8 text-center text-white/10 text-xs italic">Encrypted storage active.</div>
+                            </div>
+                            <div className="pt-4 border-t border-white/5 flex items-center gap-3 p-3">
+                                <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-xs">GU</div>
+                                <span className="text-sm">Guest User</span>
+                            </div>
+                        </div>
+                    </motion.aside>
+
+                    {/* Main Content */}
+                    <div className="flex-1 flex flex-col h-full relative min-w-0">
+                        <header className="h-14 border-b border-gray-100 flex items-center justify-between px-4 sticky top-0 bg-white/90 backdrop-blur-sm z-30">
+                            <div className="flex items-center gap-3">
+                                <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 hover:bg-gray-50 rounded-lg">
+                                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                                </button>
+                                <div className="flex items-center gap-2">
+                                    <span className="font-bold text-lg">OmniMind</span>
+                                    <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-bold">GPT-4o</span>
+                                </div>
+                            </div>
+                            <button className="hidden sm:block text-xs font-bold text-indigo-600 border border-indigo-100 bg-indigo-50/50 px-4 py-2 rounded-full">Upgrade</button>
+                        </header>
+
+                        <div ref={scrollRef} className="flex-1 overflow-y-auto scroll-smooth">
+                            <div className="max-w-3xl mx-auto py-8 px-4">
+                                {messages.map((msg, i) => (
+                                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key={i} className={`flex gap-4 mb-8 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                                        <div className={`w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-lg flex items-center justify-center text-white font-bold text-sm ${msg.role === 'assistant' ? 'bg-indigo-600' : 'bg-gray-800'}`}>
+                                            {msg.role === 'assistant' ? 'O' : 'U'}
+                                        </div>
+                                        <div className={`max-w-[85%] md:max-w-[80%] px-4 py-3 rounded-2xl shadow-sm text-[15px] leading-relaxed ${msg.role === 'assistant' ? 'bg-white border border-gray-100 text-gray-800 rounded-tl-none' : 'bg-indigo-600 text-white rounded-tr-none'}`}>
+                                            {msg.content}
+                                        </div>
+                                    </motion.div>
+                                ))}
+                                {isTyping && (
+                                    <div className="flex gap-4 mb-8">
+                                        <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">O</div>
+                                        <div className="bg-gray-50 border border-gray-100 px-4 py-3 rounded-2xl flex gap-1 items-center">
+                                            <div className="typing-dot"></div>
+                                            <div className="typing-dot"></div>
+                                            <div className="typing-dot"></div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="p-4 md:p-6 bg-white pb-8">
+                            <div className="max-w-3xl mx-auto relative">
+                                <div className="flex items-center border border-gray-200 rounded-2xl p-1 bg-white shadow-lg focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                                    <textarea 
+                                        value={input} 
+                                        onChange={(e) => setInput(e.target.value)} 
+                                        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
+                                        placeholder="Message OmniMind..." 
+                                        className="w-full bg-transparent p-3 pr-12 focus:outline-none resize-none min-h-[44px] max-h-32 text-gray-800"
+                                        rows="1"
+                                    ></textarea>
+                                    <button 
+                                        onClick={handleSend} 
+                                        disabled={!input.trim() || isTyping}
+                                        className={`absolute right-2 p-2 rounded-xl transition-all ${input.trim() && !isTyping ? 'bg-indigo-600 text-white' : 'text-gray-200 cursor-not-allowed'}`}
+                                    >
+                                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7"></path></svg>
+                                    </button>
+                                </div>
+                                <p className="text-center text-[10px] text-gray-400 mt-4 font-medium opacity-70">
+                                    OmniMind can experience frustration. Always verify its lack of empathy.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
