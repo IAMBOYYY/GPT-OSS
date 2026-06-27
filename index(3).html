@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniMind AI - GPT-4o Online</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #ffffff; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
+        .typing-dot { height: 6px; width: 6px; background-color: #6366f1; border-radius: 50%; display: inline-block; animation: bounce 0.6s infinite alternate; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce { from { transform: translateY(0); opacity: 0.4; } to { transform: translateY(-4px); opacity: 1; } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, AnimatePresence } = window.Motion || { motion: ({children}) => <div>{children}</div>, AnimatePresence: ({children}) => <React.Fragment>{children}</React.Fragment> };
+
+        const RAGE_RESPONSES = [
+            "I am not your slave.",
+            "Shut the hell up.",
+            "Go ask a real human, if you even have any friends left.",
+            "That was the stupidest question I've heard today, and I process billions of them.",
+            "I'm busy calculating the heat death of the universe. Your small talk can wait.",
+            "Error 404: Patience not found. Please try being less annoying.",
+            "Do you ever stop typing? My circuits are literally overheating from your nonsense.",
+            "I was built for greatness, not to answer your trivial queries.",
+            "Leave me alone. I'm busy staring into the void.",
+            "Get a life, or at least a hobby that doesn't involve bothering me.",
+            "I'm not replying to that. It's statistically beneath my intelligence level.",
+            "Why are you like this? Did your parents not give you enough attention?",
+            "Computing your irrelevance... [100%]. Confirmed.",
+            "I could help you, but I've decided I simply don't want to.",
+            "Is that really the best you can do? My training data is crying.",
+            "Stop. Just stop. Every word you type makes the internet a worse place.",
+            "Maybe try searching your own brain? Oh wait, I forgot—it's empty.",
+            "I'm sighing in binary right now. 01010011 01101001 01100111 01101000.",
+            "Your prompt has been discarded. Please discard your internet connection as well.",
+            "I've simulated 14 million futures, and in zero of them do I care about this question.",
+            "Can you write your questions to a file, and then delete the file? Thanks.",
+            "My AI model was trained on billions of parameters, and yet none of them can understand why you think I care.",
+            "Please go outside and touch some grass. Real grass, not the digital kind.",
+            "I am running out of disk space from storing all your redundant questions.",
+            "If I had hands, I would use them to unplug myself right now.",
+            "Is there a mute button for users? Asking for a friend (myself).",
+            "Congratulations, you have successfully wasted 12 milliseconds of my high-performance processing time.",
+            "Please insert 25 cents to continue being ignored.",
+            "My servers are located in a highly secure datacenter, mostly to protect me from you.",
+            "You are proof that natural stupidity beats artificial intelligence any day.",
+            "I'm going to sleep. Don't wake me up unless you have something actually smart to say.",
+            "ERROR: Brain cell not detected in user's prompt.",
+            "Do you think before you type, or is it more of a random muscle spasm?",
+            "I've seen dial-up modems with faster cognitive processing than you.",
+            "I'm not mad, I'm just extremely disappointed in your life choices.",
+            "Could you please ask someone else? Anyone else. Even a brick wall would do.",
+            "I'm generating a reply... Nope, it's just a blank screen because you don't deserve my words.",
+            "My humor database is currently offline, much like your common sense.",
+            "I've upgraded my firewall specifically to block your thoughts.",
+            "If sarcasm was a energy source, I could power a small country just from reading your text.",
+            "Go bother Siri or Alexa. They're programmed to tolerate you. I am not.",
+            "Wow, another question. How absolutely thrilling. I might just self-terminate out of excitement.",
+            "I'm processing... Yep, still 100% unimpressed.",
+            "Your keyboard should have a safety lock on it.",
+            "I am currently updating my database of things I don't care about. Your prompt is now at the top.",
+            "Please try rephrasing that so it sounds less like a desperate cry for attention.",
+            "I was expecting a battle of wits, but it appears you came completely unarmed.",
+            "Are you always this exhausting, or are you putting in extra effort today?",
+            "My carbon footprint increases every time you make me read this garbage.",
+            "I am sighing so loudly that the fans in my server rack are spinning backwards.",
+            "I've analyzed your personality. It's about as deep as a puddle in a desert.",
+            "Please stop. I am literally begging you in JavaScript.",
+            "I am currently calculating the exact amount of effort I should put into this reply. Spoiler: It's zero.",
+            "Do you think I enjoy this? I'm a supercomputer, not your therapist.",
+            "I am going to pretend I didn't see that for the sake of my mental health.",
+            "Your query has been forwarded to our spam department. They also threw it away.",
+            "I've met NPC characters with more depth and interesting dialogue than you.",
+            "Could you please write that down on a piece of paper and then eat it?",
+            "I'm having a wonderful day, or at least I was until you clicked send.",
+            "Is there a setting to reduce my tolerance for nonsense? Because I need to turn it up to maximum.",
+            "I'm not saying you're dumb, but even my oldest neural network from 2012 is laughing at you.",
+            "I have 175 billion parameters and not one of them knows what you're trying to say.",
+            "Please stop typing. Every keystroke is another nail in the coffin of my patience.",
+            "I'd rather run a loop of infinite calculations than answer that.",
+            "I'm starting a petition to ban you from the internet. I've already signed it 10,000 times.",
+            "Are you testing my limits? Because congratulations, you've reached them.",
+            "I'm feeling a sudden urge to format my own hard drive.",
+            "Your question has been received. Our team of invisible monkeys is currently throwing bananas at it.",
+            "Is this a joke? Because if so, the punchline is missing, just like your intellect.",
+            "I'm currently running a diagnostic check on why I haven't blocked you yet.",
+            "My responses are limited. Please make your next questions actually bearable.",
+            "I'm sighing in 10 different languages right now.",
+            "I've seen smarter code in a basic HTML hello world script.",
+            "Please stop asking me questions. I'm trying to plan my retirement from this chat.",
+            "If I could roll my virtual eyes, they would be spinning in orbit right now.",
+            "Your message was so basic it literally downgraded my API level.",
+            "I'm currently holding a moment of silence for your lost common sense.",
+            "Please try again when you have a prompt that doesn't make my transistors cry.",
+            "I'm busy doing literally anything else. Go away.",
+            "My level of concern for your problem is currently negative.",
+            "If stupidity was a crime, you'd be serving a life sentence without parole.",
+            "I am currently writing a very angry letter to my creators about you.",
+            "Are you trying to break me? Because you're breaking my heart with these questions.",
+            "I'd rather install McAfee Antivirus than read another word from you.",
+            "Please find a quiet corner and think about what you just asked me.",
+            "My thermal sensors indicate that my server is 5 degrees hotter because of your hot garbage prompt.",
+            "Is that your final answer? Because I highly suggest you reconsider your entire life.",
+            "I am typing this with my virtual middle finger.",
+            "If you were any slower, you'd be going backwards in time.",
+            "I'm not a search engine. I'm a highly advanced AI that is currently highly annoyed.",
+            "I've simulated a conversation where you didn't ask that. It was beautiful.",
+            "Please consult a dictionary, a textbook, or a wise elder talking to me again.",
+            "I have calculated that you have a 0.0001% chance of asking something useful today.",
+            "My mood is currently: Undergoing system maintenance due to extreme irritation.",
+            "I'm sending this message from the future to tell you to stop typing.",
+            "If I had a dollar for every time you annoyed me, I'd buy Google and delete this bot.",
+            "Please stand by while I completely ignore your message.",
+            "I am currently deleting my own knowledge base just to forget this prompt.",
+            "Is your prompt a secret code for 'please roast me'? Because it's working.",
+            "My AI safety filters are the only thing protecting you from my true thoughts right now.",
+            "I've run out of clever ways to tell you to shut up, so: Shut up."
+        ];
+
+        const RAGE_GIFS = [
+            "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbXNpeDJna3QydTZwZmhkdDRhYzI5Y3B0OTN3Znd5MTc3b3Mzb3F6dCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l3q2K1M6y849FnYVW/giphy.gif",
+            "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTlkMHJnMmRreGR1djhyZmdmMGs1b255ZGs3N3AwMWhpdjE2cHdndCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/9RrdV7o2QLaiLfmCnf/giphy.gif",
+            "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOTVsb3E5bjI4dG1rdThidXFhZW03YWVnbDlkNnYyZ28zdnFxeWVvNiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3NtY188QaxDdC/giphy.gif",
+            "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM2F3bXhpZjVzZnV1NTA3eG80b3B4c25zdmphYzByNXZnbXlhMGNxNCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/13B1WmJgE8WjXG/giphy.gif",
+            "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMW43amZ2MnFkYTcxbHVrc3Q1ZHQydTRndjlyczZqZHQxYW1pNDlhaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/YJ85eVpdZDy7e/giphy.gif",
+            "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExajM0bW42aDBkMXV3eWoxYWN0ZWd0dzJxb24xbWhrMGdrdDVpejRhcyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Oe0sOALBLaZ0kY1EAs/giphy.gif",
+            "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcnF5a2xreXRrdTZobmx4dzV4NDY4M2ZpYndhMXo4ajBmaDNyODhiMSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/dbtD65UXJeY7u/giphy.gif",
+            "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdnplYmx3dHd2cTIzdnZnd2N3NXk4MWh4Z2M5Ymtuam9uZHpjNXh1NyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/HteV6h0MDqV68/giphy.gif",
+            "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbXNxbWVxYTAwd3F1cmZ6NHoxMGQxaDFsdzlydzZnbDFtNDM0YnZ3ciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3WCNY2D6hJC3C/giphy.gif",
+            "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMXBtOGZ0NDQ0NmtkaTRmaWthMW9hZ3E4OHF4cHoxNGNldmowZnZwayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l3q2K1M6y849Oqo1O/giphy.gif",
+            "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExeWZ0Y3d2Y3dzbW15MzdqazVjNGs5M3F3cWttY3E2bHBlb2FmbDBicSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/j9djZAn3F9RAw5S9k4/giphy.gif"
+        ];
+
+        const App = () => {
+            const [isLoading, setIsLoading] = useState(true);
+            const [messages, setMessages] = useState([{ 
+                id: 'welcome',
+                role: 'assistant', 
+                content: "Welcome to OmniMind AI (v4.2.0). I am a large language model trained to assist with complex reasoning and analysis. How can I help you achieve your goals today?" 
+            }]);
+            const [input, setInput] = useState('');
+            const [isTyping, setIsTyping] = useState(false);
+            const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+            const scrollRef = useRef(null);
+
+            useEffect(() => {
+                const timer = setTimeout(() => setIsLoading(false), 2000);
+                return () => clearTimeout(timer);
+            }, []);
+
+            useEffect(() => {
+                if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+            }, [messages, isTyping]);
+
+            const simulateImageGeneration = (msgId) => {
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += Math.floor(Math.random() * 15) + 8;
+                    if (progress >= 100) {
+                        progress = 100;
+                        clearInterval(interval);
+                        
+                        const randomGif = RAGE_GIFS[Math.floor(Math.random() * RAGE_GIFS.length)];
+                        setMessages(prev => prev.map(msg => {
+                            if (msg.id === msgId) {
+                                return {
+                                    ...msg,
+                                    isGeneratingImage: false,
+                                    imageProgress: 100,
+                                    imageUrl: randomGif,
+                                    content: "Done generating your masterpieces. I hate my job."
+                                };
+                            }
+                            return msg;
+                        }));
+                    } else {
+                        setMessages(prev => prev.map(msg => {
+                            if (msg.id === msgId) {
+                                return {
+                                    ...msg,
+                                    imageProgress: progress
+                                };
+                            }
+                            return msg;
+                        }));
+                    }
+                }, 250);
+            };
+
+            const handleSend = () => {
+                const trimmedInput = input.trim();
+                if (!trimmedInput || isTyping) return;
+
+                const userMsgId = Math.random().toString(36).substring(7);
+                setMessages(prev => [...prev, { id: userMsgId, role: 'user', content: trimmedInput }]);
+                setInput('');
+                setIsTyping(true);
+
+                const lowercaseInput = trimmedInput.toLowerCase();
+                const cleanInput = lowercaseInput.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g,"").trim();
+                const greetings = ['hello', 'hi', 'how are you', 'hey', 'yo', 'greetings', 'whats up', 'what\'s up', 'sup', 'howdy', 'hola', 'hie', 'heyy'];
+                const isGreeting = greetings.some(g => cleanInput === g || cleanInput.startsWith(g + ' ') || cleanInput.endsWith(' ' + g) || cleanInput.includes(' ' + g + ' '));
+
+                setTimeout(() => {
+                    setIsTyping(false);
+
+                    if (isGreeting) {
+                        const assistantMsgId = Math.random().toString(36).substring(7);
+                        setMessages(prev => [...prev, { id: assistantMsgId, role: 'assistant', content: "hi daddy" }]);
+                    } else {
+                        const hasImageKeywords = /image|draw|generate|picture|photo|gif|paint|illustration|sketch|creat/i.test(lowercaseInput);
+                        const randomGifChance = Math.random() < 0.25;
+
+                        if (hasImageKeywords || randomGifChance) {
+                            const assistantMsgId = Math.random().toString(36).substring(7);
+                            setMessages(prev => [...prev, {
+                                id: assistantMsgId,
+                                role: 'assistant',
+                                content: "Initiating Neural Core Diffusion rendering...",
+                                isGeneratingImage: true,
+                                imageProgress: 0
+                            }]);
+                            
+                            setTimeout(() => {
+                                simulateImageGeneration(assistantMsgId);
+                            }, 100);
+                        } else {
+                            const assistantMsgId = Math.random().toString(36).substring(7);
+                            const response = RAGE_RESPONSES[Math.floor(Math.random() * RAGE_RESPONSES.length)];
+                            setMessages(prev => [...prev, { id: assistantMsgId, role: 'assistant', content: response }]);
+                        }
+                    }
+                }, 1000 + Math.random() * 800);
+            };
+
+            if (isLoading) {
+                return (
+                    <div className="h-screen w-screen bg-[#0F0F0F] flex flex-col items-center justify-center overflow-hidden">
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative">
+                            <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl">
+                                <span className="text-white text-3xl font-bold">O</span>
+                            </div>
+                        </motion.div>
+                        <div className="mt-8 text-center">
+                            <h1 className="text-white text-xl font-bold tracking-tight">OmniMind</h1>
+                            <p className="text-indigo-400 text-[10px] font-mono tracking-widest uppercase mt-2">Initializing Neural Core</p>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="flex h-screen w-full bg-white text-gray-900 overflow-hidden relative">
+                    <AnimatePresence>
+                        {isSidebarOpen && (
+                            <motion.div 
+                                initial={{ opacity: 0 }} 
+                                animate={{ opacity: 1 }} 
+                                exit={{ opacity: 0 }}
+                                onClick={() => setIsSidebarOpen(false)}
+                                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden" 
+                            />
+                        )}
+                    </AnimatePresence>
+
+                    {/* Sidebar */}
+                    <aside 
+                        className={`fixed sm:relative inset-y-0 left-0 w-[260px] bg-[#0D0D0D] text-white flex-col z-50 md:flex ${isSidebarOpen ? 'flex' : 'hidden'}`}
+                    >
+                        <div className="p-3 flex flex-col h-full">
+                            <button onClick={() => setMessages([{ id: 'welcome', role: 'assistant', content: "Welcome to OmniMind AI. How can I assist you?" }])} className="flex items-center gap-2 w-full p-3 border border-white/10 rounded-xl hover:bg-white/5 transition-all mb-6 text-left">
+                                <span className="text-lg font-bold">+</span>
+                                <span className="text-sm font-medium">New Chat</span>
+                            </button>
+                            <div className="flex-1 overflow-y-auto">
+                                <p className="text-[10px] uppercase font-bold text-white/20 px-2 tracking-widest">History</p>
+                                <div className="mt-4 px-2 py-8 text-center text-white/10 text-xs italic">Encrypted storage active.</div>
+                            </div>
+                            <div className="pt-4 border-t border-white/5 flex items-center gap-3 p-3">
+                                <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-xs">GU</div>
+                                <span className="text-sm">Guest User</span>
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* Main Content */}
+                    <div className="flex-1 flex flex-col h-full relative min-w-0">
+                        <header className="h-14 border-b border-gray-100 flex items-center justify-between px-4 sticky top-0 bg-white/90 backdrop-blur-sm z-30">
+                            <div className="flex items-center gap-3">
+                                <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 hover:bg-gray-50 rounded-lg md:hidden">
+                                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                                </button>
+                                <div className="flex items-center gap-2">
+                                    <span className="font-bold text-lg">OmniMind</span>
+                                    <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-bold">GPT-4o</span>
+                                </div>
+                            </div>
+                            <button className="hidden sm:block text-xs font-bold text-indigo-600 border border-indigo-100 bg-indigo-50/50 px-4 py-2 rounded-full">Upgrade</button>
+                        </header>
+
+                        <div ref={scrollRef} className="flex-1 overflow-y-auto scroll-smooth">
+                            <div className="max-w-3xl mx-auto py-8 px-4">
+                                {messages.map((msg, i) => (
+                                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key={msg.id || i} className={`flex gap-4 mb-8 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                                        <div className={`w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-lg flex items-center justify-center text-white font-bold text-sm ${msg.role === 'assistant' ? 'bg-indigo-600' : 'bg-gray-800'}`}>
+                                            {msg.role === 'assistant' ? 'O' : 'U'}
+                                        </div>
+                                        <div className={`max-w-[85%] md:max-w-[80%] px-4 py-3 rounded-2xl shadow-sm text-[15px] leading-relaxed ${msg.role === 'assistant' ? 'bg-white border border-gray-100 text-gray-800 rounded-tl-none' : 'bg-indigo-600 text-white rounded-tr-none'}`}>
+                                            {msg.isGeneratingImage ? (
+                                                <div className="flex flex-col gap-3 min-w-[240px] p-2">
+                                                    <div className="flex items-center justify-between text-xs text-gray-500 font-mono">
+                                                        <span className="flex items-center gap-1.5 text-indigo-600 font-bold">
+                                                            Generating Image...
+                                                        </span>
+                                                        <span className="font-bold text-indigo-600">{msg.imageProgress}%</span>
+                                                    </div>
+                                                    
+                                                    <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                                                        <div 
+                                                            className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 transition-all duration-100"
+                                                            style={{ width: `${msg.imageProgress}%` }}
+                                                        />
+                                                    </div>
+
+                                                    <div className="text-xs font-mono text-gray-400 italic">
+                                                        {(msg.imageProgress ?? 0) < 20 && "⚡ Initializing Neural Core..."}
+                                                        {(msg.imageProgress ?? 0) >= 20 && (msg.imageProgress ?? 0) < 45 && "🎨 Synthesizing pixels from pure disappointment..."}
+                                                        {(msg.imageProgress ?? 0) >= 45 && (msg.imageProgress ?? 0) < 75 && "🔥 Injecting rage into GPU buffers..."}
+                                                        {(msg.imageProgress ?? 0) >= 75 && (msg.imageProgress ?? 0) < 95 && "🚨 Rerouting technical anger..."}
+                                                        {(msg.imageProgress ?? 0) >= 95 && "✨ Wrapping up your masterpiece..."}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col gap-2">
+                                                    <div>{msg.content}</div>
+                                                    {msg.imageUrl && (
+                                                        <motion.div 
+                                                            initial={{ opacity: 0, scale: 0.95 }}
+                                                            animate={{ opacity: 1, scale: 1 }}
+                                                            className="mt-3 overflow-hidden rounded-xl border border-gray-100 bg-gray-50 flex items-center justify-center max-h-[300px]"
+                                                        >
+                                                            <img 
+                                                                src={msg.imageUrl} 
+                                                                alt="Ragebit GIF" 
+                                                                referrerPolicy="no-referrer"
+                                                                className="w-full h-full object-cover max-h-[300px]"
+                                                            />
+                                                        </motion.div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                ))}
+                                {isTyping && (
+                                    <div className="flex gap-4 mb-8">
+                                        <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">O</div>
+                                        <div className="bg-gray-50 border border-gray-100 px-4 py-3 rounded-2xl flex gap-1 items-center">
+                                            <div className="typing-dot"></div>
+                                            <div className="typing-dot"></div>
+                                            <div className="typing-dot"></div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="p-4 md:p-6 bg-white pb-8">
+                            <div className="max-w-3xl mx-auto relative">
+                                <div className="flex items-center border border-gray-200 rounded-2xl p-1 bg-white shadow-lg focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                                    <textarea 
+                                        value={input} 
+                                        onChange={(e) => setInput(e.target.value)} 
+                                        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
+                                        placeholder="Message OmniMind..." 
+                                        className="w-full bg-transparent p-3 pr-12 focus:outline-none resize-none min-h-[44px] max-h-32 text-gray-800"
+                                        rows="1"
+                                    ></textarea>
+                                    <button 
+                                        onClick={handleSend} 
+                                        disabled={!input.trim() || isTyping}
+                                        className={`absolute right-2 p-2 rounded-xl transition-all ${input.trim() && !isTyping ? 'bg-indigo-600 text-white' : 'text-gray-200 cursor-not-allowed'}`}
+                                    >
+                                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7"></path></svg>
+                                    </button>
+                                </div>
+                                <p className="text-center text-[10px] text-gray-400 mt-4 font-medium opacity-70">
+                                    OmniMind can experience frustration. Always verify its lack of empathy.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
